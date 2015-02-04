@@ -18,6 +18,3 @@ WHERE t.kind_id = 1 # Movies
 AND i.info_type_id = 101
 AND ci.person_role_id = 1 # Actor
 LIMIT 100
-
-
-test
