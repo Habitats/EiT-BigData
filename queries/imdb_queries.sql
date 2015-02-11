@@ -28,3 +28,18 @@ JOIN info_type ty ON m.info_type_id = ty.id
 AND ty.info = 'gross'
 AND m.info LIKE '$%Worldwide)' 
 order by yo desc
+
+# Alle produsert etter år 2000 med minst 1000 stemmer
+SELECT title, votes.info as votes, rating.info as rating, money.info as money FROM title
+INNER JOIN movie_info_idx as votes
+ON title.id = votes.movie_id
+INNER JOIN movie_info_idx as rating
+ON title.id = rating.movie_id
+INNER JOIN movie_info as money
+ON title.id = money.movie_id
+WHERE title.kind_id = 1 # movie
+AND title.production_year > 2000
+AND votes.info_type_id = 100 # votes
+AND rating.info_type_id = 101 # rating
+AND money.info_type_id = 107 # money
+AND votes.info > 1000
