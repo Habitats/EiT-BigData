@@ -60,3 +60,24 @@ SELECT t.id, t.title, t.production_year,
 FROM title t
 WHERE t.kind_id = 1 # Only movies
 AND EXISTS (SELECT info FROM movie_info_idx WHERE info_type_id = 101 AND movie_id = t.id) # IMDB-rating exists
+
+
+# Legge TOP 1000 ACTORS inn i mysql
+
+CREATE TABLE top1000actors (
+  position INT NOT NULL AUTO_INCREMENT,
+
+ name VARCHAR(255) NOT NULL,
+  PRIMARY KEY (position)
+);
+
+
+
+LOAD DATA INFILE 'c:/Brukere/Kjartan/Nedlastninger/top1000actors.csv'
+
+INTO TABLE top1000actors
+FIELDS TERMINATED BY ',' 
+ENCLOSED BY ''
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
