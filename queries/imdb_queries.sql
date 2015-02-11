@@ -18,3 +18,14 @@ WHERE t.kind_id = 1 # Movies
 AND i.info_type_id = 101
 AND ci.person_role_id = 1 # Actor
 LIMIT 100
+
+
+#Worldwide gross 
+
+SELECT m.info
+FROM title t
+JOIN movie_info m ON m.movie_id = t.id
+JOIN info_type ty ON m.info_type_id = ty.id
+WHERE t.title ='Inception'
+AND ty.info = 'gross'
+AND m.info LIKE '%Worldwide%'
