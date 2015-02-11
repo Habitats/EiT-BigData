@@ -73,7 +73,7 @@ CREATE TABLE top1000actors (
 
 
 
-LOAD DATA INFILE 'c:/Brukere/Kjartan/Nedlastninger/top1000actors.csv'
+LOAD DATA INFILE 'c:/top1000actors.csv'
 
 INTO TABLE top1000actors
 FIELDS TERMINATED BY ',' 
