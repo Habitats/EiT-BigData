@@ -20,12 +20,11 @@ AND ci.person_role_id = 1 # Actor
 LIMIT 100
 
 
-#Worldwide gross 
-
-SELECT m.info
+#Worldwide gross
+SELECT title, cast(replace( substring(substring_index(m.info,' ',1),2), ",","") as unsigned) as yo, m.info
 FROM title t
 JOIN movie_info m ON m.movie_id = t.id
 JOIN info_type ty ON m.info_type_id = ty.id
-WHERE t.title ='Inception'
 AND ty.info = 'gross'
-AND m.info LIKE '%Worldwide%'
+AND m.info LIKE '$%Worldwide)' 
+order by yo desc
