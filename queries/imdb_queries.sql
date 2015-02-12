@@ -63,7 +63,6 @@ AND EXISTS (SELECT info FROM movie_info_idx WHERE info_type_id = 101 AND movie_i
 
 
 # Legge TOP 1000 ACTORS inn i mysql
-
 CREATE TABLE top1000actors (
   position INT NOT NULL AUTO_INCREMENT,
 
@@ -73,7 +72,7 @@ CREATE TABLE top1000actors (
 
 
 
-LOAD DATA INFILE 'c:/top1000actors.csv'
+LOAD DATA LOCAL INFILE 'c:/top1000actors.csv'
 
 INTO TABLE top1000actors
 FIELDS TERMINATED BY ',' 
