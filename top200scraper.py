@@ -5,8 +5,8 @@ import unicodedata
 
 top1000 = []
 
-for start in range(1, 1000, 250):
-  r  = requests.get("http://www.imdb.com/list/ls000050027/?start=" + str(start) + "&view=detail&sort=listorian:asc&scb=0.48930723196826875")
+for start in range(1, 200, 200):
+  r  = requests.get("http://www.imdb.com/list/ls000050027/?start=" + str(start) + "&view=compact&sort=listorian:asc&scb=0.14773859968408942")
   data = r.text
   soup = BeautifulSoup(data)
   actors = soup.find_all('td', {'class':'name'})
@@ -20,7 +20,7 @@ for start in range(1, 1000, 250):
       print("could not convert")
 
 
-with open('top1000actors.csv', 'w', newline='') as csvfile:
+with open('top200directors.csv', 'w', newline='') as csvfile:
     a = csv.writer(csvfile, delimiter=',')
     a.writerow(["position", "name"])
     a.writerows(top1000)
