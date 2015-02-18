@@ -84,11 +84,6 @@ ADD score INT NOT NULL;
 UPDATE top1000actors SET score = ((1000-position) DIV 100) +1 WHERE position BETWEEN 1 AND 1000;
 
 
-# Endre alle skuespillernavn i name-tabellen fra Etternavn, Fornavn til Fornavn Etternavn
-# Tar 7 min
-UPDATE name SET name = concat(trim(substring_index(name, ",",-1))," " ,trim(substring_index(name, ",",1))) WHERE id BETWEEN 0 AND 4993554
-
-
 # Total skuespiller-score på alle filmer produsert etter år 2000 med 100 votes
 # Tar 2 minutter på LIMIT 10....
 
@@ -106,4 +101,11 @@ AND rating.info_type_id = 101 # imdb-score
 AND votes.info > 1000
 AND t.production_year > 2000
 GROUP BY t.id
+
+
+# Legg til ny navn-kolonne i name-tabellen
+ALTER TABLE name
+ADD name2 text NOT NULL;
+# Legg inn navn på format "Fornavn Etternavn" i denne nye kolonnen
+UPDATE name SET name2 = concat(trim(substring_index(name, ",",-1))," " ,trim(substring_index(name, ",",1))) WHERE id BETWEEN 0 AND 4993554
 
