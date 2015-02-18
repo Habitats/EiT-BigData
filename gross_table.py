@@ -32,7 +32,7 @@ def normalizeDate(input):
 
 try:
   # Connect to database
-  con = mdb.connect('localhost', 'root', 'kakke', 'imdb', use_unicode=True, charset='utf8')
+  con = mdb.connect('bigdata.no-ip-org', 'root', 'bigeit', 'imdb_dev', use_unicode=True, charset='utf8')
   cur = con.cursor()
   # One cursor for insertions
   cur2 = con.cursor()
