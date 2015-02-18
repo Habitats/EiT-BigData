@@ -73,3 +73,37 @@ FIELDS TERMINATED BY ','
 ENCLOSED BY ''
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS;
+
+# Fjerner tom rad på alle skuespillernavn
+UPDATE top1000actors SET name=replace(replace(name, '\n', ''),'\r', '')
+
+
+# Legger til skuespiller-score i top1000actors-tabellen
+ALTER TABLE top1000actors 
+ADD score INT NOT NULL;
+UPDATE top1000actors SET score = ((1000-position) DIV 100) +1 WHERE position BETWEEN 1 AND 1000;
+
+
+# Endre alle skuespillernavn i name-tabellen fra Etternavn, Fornavn til Fornavn Etternavn
+# Tar 7 min
+UPDATE name SET name = concat(trim(substring_index(name, ",",-1))," " ,trim(substring_index(name, ",",1))) WHERE id BETWEEN 0 AND 4993554
+
+
+# Total skuespiller-score på alle filmer produsert etter år 2000 med 100 votes
+# Tar 2 minutter på LIMIT 10....
+
+SELECT t.id, t.title, t.production_year, rating.info AS imdbScore, votes.info AS votes, SUM(top.score) AS TotalActorScore
+FROM title t
+JOIN cast_info ci ON t.id = ci.movie_id
+JOIN name n ON ci.person_id = n.id
+JOIN top1000actors top ON top.name = n.name 
+JOIN movie_info_idx votes ON t.id = votes.movie_id
+JOIN movie_info_idx rating ON t.id = rating.movie_id
+WHERE ci.role_id BETWEEN 1 AND 2 # Actor or Actress
+AND t.kind_id = 1 # Movie
+AND votes.info_type_id = 100 # votes
+AND rating.info_type_id = 101 # imdb-score
+AND votes.info > 1000
+AND t.production_year > 2000
+GROUP BY t.id
+
