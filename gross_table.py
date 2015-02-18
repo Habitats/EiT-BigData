@@ -11,8 +11,9 @@ CREATE TABLE `gross` (
   `gross` int(11) DEFAULT NULL,
   `currency` varchar(10) DEFAULT NULL,
   `date` datetime DEFAULT NULL,
+  `usd_gross` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=344180 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 """
 
 def normalizeDate(input):
@@ -31,7 +32,7 @@ def normalizeDate(input):
 
 try:
   # Connect to database
-  con = mdb.connect('bigdata.no-ip.org', 'root', 'bigeit', 'imdb_dev', use_unicode=True, charset='utf8')
+  con = mdb.connect('localhost', 'root', 'kakke', 'imdb', use_unicode=True, charset='utf8')
   cur = con.cursor()
   # One cursor for insertions
   cur2 = con.cursor()
@@ -50,26 +51,53 @@ try:
     location = value_string[1]
 
     date = None
+    usd_gross = None
+
     if len(value_string) > 2:
       date = normalizeDate(value_string[-1])
 
     currency = pattern.search(raw_money).groups()[0].encode("utf8")
     money = int(re.sub(r'[^\d.]', '', raw_money).replace(".",""))
 
+    # Average fx for 2005-2010
     if currency == "£":
       currency = "GBP" 
+      usd_gross = 1.6001 * money
     elif currency == "$":
       currency = "USD"
+      usd_gross = money
     elif currency == "€":
       currency = "EUR"
+      usd_gross = 1.3338 * money
+    elif currency == "ESP":
+      usd_gross = 0.0080 * money
+    elif currency == "SEK":
+      usd_gross = 0.1504 * money
+    elif currency == "AUD":
+      usd_gross = 0.9847 * money
+    elif currency == "PHP":
+      usd_gross = 0.0232 * money
+    elif currency == "ITL":
+      usd_gross = 0.0007 * money
+    elif currency == "INR":
+      usd_gross = 0.0184 * money
+    elif currency == "HKD":
+      usd_gross = 0.1288 * money
 
     # Insert data into gross table
-    cur2.execute("""INSERT INTO gross (movie_id, gross, currency, date) 
-                   VALUES (%s, %s, %s, %s)""", [movie_id, money, currency, date])
+    cur2.execute("""INSERT INTO gross (movie_id, gross, currency, date, usd_gross) 
+                   VALUES (%s, %s, %s, %s, %s)""", [movie_id, money, currency, date, usd_gross])
 
     # Commit and get next row
     con.commit()
     data = cur.fetchone()
+
+  # Keep only the rows with the highest value
+  cur2.execute("""DELETE FROM gross
+                  WHERE id NOT IN (
+                  SELECT id FROM (SELECT id, MAX(gross) FROM gross GROUP BY currency, movie_id) as g2
+              )""")
+  con.commit()
 
 except mdb.Error, e:
     print "Error %d: %s" % (e.args[0], e.args[1])
