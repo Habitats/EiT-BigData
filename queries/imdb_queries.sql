@@ -109,3 +109,29 @@ ADD name2 text NOT NULL;
 # Legg inn navn på format "Fornavn Etternavn" i denne nye kolonnen
 UPDATE name SET name2 = concat(trim(substring_index(name, ",",-1))," " ,trim(substring_index(name, ",",1))) WHERE id BETWEEN 0 AND 4993554
 
+
+#Spørring for model1
+
+SELECT t.id AS ID, t.title AS Title, genre.info AS Genre, SUBSTRING_INDEX(runtime.info,':',-1) AS Runtime, votes.info AS Votes, 
+relmonth.info AS ReleaseMonth, mpaa.info AS MPAA, SUM(top.logscore) AS TotalActorLogScore, SUM(top2.logscore) AS TotalDirectorLogScore, rating.info AS IMDBScore
+FROM title t
+JOIN cast_info ci ON t.id = ci.movie_id
+JOIN name n ON ci.person_id = n.id
+JOIN top1000actors top ON top.name_id = n.id 
+JOIN top200directors top2 ON top2.name_id = n.id
+JOIN movie_info genre ON t.id = genre.movie_id
+JOIN movie_info lang ON t.id = lang.movie_id
+JOIN movie_info runtime ON t.id = runtime.movie_id
+JOIN movie_info_idx votes ON t.id = votes.movie_id
+JOIN movie_info relmonth ON t.id = relmonth.movie_id
+JOIN movie_info mpaa ON t.id = mpaa.movie_id
+JOIN movie_info_idx rating ON t.id = rating.movie_id
+WHERE genre.info_type_id = 3 # genre
+AND lang.info_type_id = 4 # language
+AND runtime.info_type_id = 1 # runtime
+AND votes.info_type_id = 100 # votes
+AND relmonth.info_type_id = 16 # release month
+AND mpaa.info_type_id = 97 # MPAA
+AND rating.info_type_id = 101 # imdb-score
+GROUP BY t.id
+
