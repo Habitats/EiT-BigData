@@ -8,35 +8,42 @@ import util
 """
 CREATE TABLE `gross` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `movie_id` int(11) DEFAULT NULL,
-  `gross` int(15) DEFAULT NULL,
+  `movie_id` int(11) unsigned DEFAULT NULL,
+  `gross` bigint(15) DEFAULT NULL,
   `currency` varchar(10) DEFAULT NULL,
   `date` datetime DEFAULT NULL,
-  `usd_gross` int(15) DEFAULT NULL,
-  `i_adj_usd_gross` int(15) DEFAULT NULL,
+  `usd_gross` bigint(15) DEFAULT NULL,
+  `i_adj_usd_gross` bigint(15) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 """
 
 try:
   # Connect to database
-  con = mdb.connect('localhost', 'bigeit', 'bigeit', 'imdb', use_unicode=True, charset='utf8')
+  con = mdb.connect('localhost', 'root', 'bigeit', 'imdb_movies', use_unicode=True, charset='utf8')
   cur = con.cursor()
   # One cursor for insertions
   cur2 = con.cursor()
+  print "Database connection established"
 
   # Delete existing data
   cur2.execute("DELETE FROM gross")
   con.commit()
+  print "Old data deleted"
 
   # Loop through all movies
   cur.execute("SELECT movie_id, info FROM movie_info WHERE info_type_id = 107")
+
+  print "Movies loaded"
 
   # Pattern to match currency in string
   pattern = re.compile(r"([^0-9-\s]+)")
 
   data = cur.fetchone()
+  i = 0
   while data:
+    if i%1000 == 0:
+      print ".",
     movie_id = data[0]
     value_string = data[1].replace(")", "").split("(")
     raw_money = value_string[0]

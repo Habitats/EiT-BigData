@@ -9,17 +9,17 @@ import util
 CREATE TABLE `budget` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `movie_id` int(11) DEFAULT NULL,
-  `budget` int(15) DEFAULT NULL,
+  `budget` bigint(15) DEFAULT NULL,
   `currency` varchar(10) DEFAULT NULL,
-  `usd_budget` int(15) DEFAULT NULL,
-  `i_adj_usd_budget` int(15) DEFAULT NULL,
+  `usd_budget` bigint(15) DEFAULT NULL,
+  `i_adj_usd_budget` bigint(15) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 """
 print "Running..."
 try:
   # Connect to database
-  con = mdb.connect('localhost', 'bigeit', 'bigeit', 'imdb', use_unicode=True, charset='utf8')
+  con = mdb.connect('localhost', 'root', 'bigeit', 'imdb_movie', use_unicode=True, charset='utf8')
   cur = con.cursor()
   # One cursor for insertions
   cur2 = con.cursor()
@@ -44,7 +44,7 @@ try:
   i = 0
   while data:
     if i%10000==0:
-      print i
+      print ".",
     movie_id = data[0]
     production_year = data[1]
     raw_money = data[2]
