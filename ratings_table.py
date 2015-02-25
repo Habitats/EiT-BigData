@@ -9,7 +9,7 @@ import util
 CREATE TABLE `mpaa_ratings` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `movie_id` int(11) DEFAULT NULL,
-  `rating` varchar(20) DEFAULT NULL,
+  `mpaa` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 """
@@ -38,10 +38,10 @@ try:
     movie_id = data[0]
     raw_rating = data[1]
 
-    rating = " ".join(raw_rating.split(" ")[0:2])
+    rating = raw_rating.split(" ")[1]
 
     # Insert data into budget table
-    cur2.execute("""INSERT INTO mpaa_ratings (movie_id, rating) 
+    cur2.execute("""INSERT INTO mpaa_ratings (movie_id, mpaa) 
                    VALUES (%s, %s)""", [movie_id, rating])
 
     # Commit and get next row
