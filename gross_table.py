@@ -8,10 +8,11 @@ import time, sys, re
 CREATE TABLE `gross` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `movie_id` int(11) DEFAULT NULL,
-  `gross` int(11) DEFAULT NULL,
+  `gross` int(15) DEFAULT NULL,
   `currency` varchar(10) DEFAULT NULL,
   `date` datetime DEFAULT NULL,
-  `usd_gross` int(11) DEFAULT NULL,
+  `usd_gross` int(15) DEFAULT NULL,
+  `i_adj_usd_gross` int(15) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 """
@@ -32,7 +33,7 @@ def normalizeDate(input):
 
 try:
   # Connect to database
-  con = mdb.connect('bigdata.no-ip-org', 'root', 'bigeit', 'imdb_dev', use_unicode=True, charset='utf8')
+  con = mdb.connect('localhost', 'bigeit', 'bigeit', 'imdb', use_unicode=True, charset='utf8')
   cur = con.cursor()
   # One cursor for insertions
   cur2 = con.cursor()
@@ -51,15 +52,19 @@ try:
     location = value_string[1]
 
     date = None
+    year = None
     usd_gross = None
 
     if len(value_string) > 2:
       date = normalizeDate(value_string[-1])
+      if date:
+        year = int(date[0:4])
 
     currency = pattern.search(raw_money).groups()[0].encode("utf8")
     money = int(re.sub(r'[^\d.]', '', raw_money).replace(".",""))
 
     # Average fx for 2005-2010
+    # TODO: convert to NPV, use average rate 2.947%
     if currency == "£":
       currency = "GBP" 
       usd_gross = 1.6001 * money
@@ -84,9 +89,13 @@ try:
     elif currency == "HKD":
       usd_gross = 0.1288 * money
 
+    infl_adj = None
+    if year:
+      infl_adj = usd_gross * 1.02947**(2015-year)
+
     # Insert data into gross table
-    cur2.execute("""INSERT INTO gross (movie_id, gross, currency, date, usd_gross) 
-                   VALUES (%s, %s, %s, %s, %s)""", [movie_id, money, currency, date, usd_gross])
+    cur2.execute("""INSERT INTO gross (movie_id, gross, currency, date, usd_gross, i_adj_usd_gross) 
+                   VALUES (%s, %s, %s, %s, %s)""", [movie_id, money, currency, date, usd_gross, infl_adj])
 
     # Commit and get next row
     con.commit()
