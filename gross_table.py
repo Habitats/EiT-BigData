@@ -90,12 +90,12 @@ try:
       usd_gross = 0.1288 * money
 
     infl_adj = None
-    if year:
+    if year is not None and usd_gross is not None:
       infl_adj = usd_gross * 1.02947**(2015-year)
 
     # Insert data into gross table
     cur2.execute("""INSERT INTO gross (movie_id, gross, currency, date, usd_gross, i_adj_usd_gross) 
-                   VALUES (%s, %s, %s, %s, %s)""", [movie_id, money, currency, date, usd_gross, infl_adj])
+                   VALUES (%s, %s, %s, %s, %s, %s)""", [movie_id, money, currency, date, usd_gross, infl_adj])
 
     # Commit and get next row
     con.commit()
