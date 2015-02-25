@@ -43,8 +43,9 @@ try:
     data = cur.fetchone()
     i = 0
     while data:
-        if i % 1000 == 0:
+        if i % 10000 == 0:
             print ".",
+        i += 1
         movie_id = data[0]
         value_string = data[1].replace(")", "").split("(")
         raw_money = value_string[0]
