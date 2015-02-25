@@ -49,7 +49,7 @@ try:
 
     # Insert data into budget table
     cur2.execute("""INSERT INTO release_month (movie_id, release_month, year) 
-                   VALUES (%s, %s)""", [movie_id, month, year])
+                   VALUES (%s, %s, %s)""", [movie_id, month, year])
 
     # Commit and get next row
     con.commit()
