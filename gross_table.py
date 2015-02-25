@@ -38,6 +38,10 @@ try:
   # One cursor for insertions
   cur2 = con.cursor()
 
+  # Delete existing data
+  cur2.execute("DELETE FROM gross")
+  con.commit()
+
   # Loop through all movies
   cur.execute("SELECT movie_id, info FROM movie_info WHERE info_type_id = 107")
 
