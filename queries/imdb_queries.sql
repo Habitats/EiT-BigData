@@ -110,28 +110,22 @@ ADD name2 text NOT NULL;
 UPDATE name SET name2 = concat(trim(substring_index(name, ",",-1))," " ,trim(substring_index(name, ",",1))) WHERE id BETWEEN 0 AND 4993554
 
 
-#Spørring for model1
+#View for model1
 
-SELECT t.id AS ID, t.title AS Title, genre.info AS Genre, SUBSTRING_INDEX(runtime.info,':',-1) AS Runtime, votes.info AS Votes, 
-relmonth.info AS ReleaseMonth, mpaa.info AS MPAA, SUM(top.logscore) AS TotalActorLogScore, SUM(top2.logscore) AS TotalDirectorLogScore, rating.info AS IMDBScore
+CREATE VIEW model1
+AS (
+SELECT t.id AS ID, t.title AS Title, l.language AS Language,
+g.genres AS Genres, r.runtime AS Runtime,mpaa.mpaa AS MPAA,
+rm.release_month AS ReleaseMonth, top.logscore AS TotalActorLogScore,
+top2.logscore AS TotalDirectorLogScore, v.votes AS Votes, ra.rating AS Rating
 FROM title t
-JOIN cast_info ci ON t.id = ci.movie_id
-JOIN name n ON ci.person_id = n.id
-JOIN top1000actors top ON top.name_id = n.id 
-JOIN top200directors top2 ON top2.name_id = n.id
-JOIN movie_info genre ON t.id = genre.movie_id
-JOIN movie_info lang ON t.id = lang.movie_id
-JOIN movie_info runtime ON t.id = runtime.movie_id
-JOIN movie_info_idx votes ON t.id = votes.movie_id
-JOIN movie_info relmonth ON t.id = relmonth.movie_id
-JOIN movie_info mpaa ON t.id = mpaa.movie_id
-JOIN movie_info_idx rating ON t.id = rating.movie_id
-WHERE genre.info_type_id = 3 # genre
-AND lang.info_type_id = 4 # language
-AND runtime.info_type_id = 1 # runtime
-AND votes.info_type_id = 100 # votes
-AND relmonth.info_type_id = 16 # release month
-AND mpaa.info_type_id = 97 # MPAA
-AND rating.info_type_id = 101 # imdb-score
-GROUP BY t.id
-
+JOIN language l ON t.id = l.movie_id
+JOIN genres g ON t.id = g.movie_id
+JOIN runtimes r ON t.id = r.movie_id
+JOIN mpaa_ratings mpaa ON t.id = mpaa.movie_id
+JOIN release_month rm ON t.id = rm.movie_id
+LEFT JOIN actor_scores top ON top.movie_id = t.id 
+LEFT JOIN director_scores top2 ON top2.movie_id = t.id 
+JOIN votes v ON t.id = v.movie_id
+JOIN rating ra ON t.id = ra.movie_id
+GROUP BY t.id);
