@@ -117,7 +117,9 @@ AS (
 SELECT t.id AS ID, t.title AS Title, l.language AS Language,
 g.genres AS Genres, r.runtime AS Runtime,mpaa.mpaa AS MPAA,
 rm.release_month AS ReleaseMonth, IFNULL(top.logscore,0) AS TotalActorLogScore,
-IFNULL(top2.logscore,0) AS TotalDirectorLogScore, v.votes AS Votes, ra.rating AS Rating
+IFNULL(top2.logscore,0) AS TotalDirectorLogScore, v.votes AS Votes, ra.rating AS Rating,
+ra.rating_cat AS IntegerRating, ra.rating_enum AS RatingCategory, bu.usd_budget AS UsdBudget,
+bu.i_adj_usd_budget AS UsdAdjBudget, gr.usd_gross AS UsdGross, gr.i_adj_usd_gross AS UsdAdjGross
 FROM title t
 JOIN language l ON t.id = l.movie_id
 JOIN genres g ON t.id = g.movie_id
@@ -128,6 +130,8 @@ LEFT JOIN actor_scores top ON top.movie_id = t.id
 LEFT JOIN director_scores top2 ON top2.movie_id = t.id 
 JOIN votes v ON t.id = v.movie_id
 JOIN rating ra ON t.id = ra.movie_id
+JOIN budget bu ON t.id = bu.movie_id
+JOIN gross gr ON t.id = gr.movie_id
 GROUP BY t.id);
 
 # Fjern land fra runtime-tabellen, deretter normalisering av data
