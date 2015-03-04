@@ -181,3 +181,29 @@ JOIN movie_info runtime ON t.id = runtime.movie_id
 WHERE runtime.info_type_id = 1 # runtime
 GROUP BY t.id);
 
+  # Add categorical rating to rating
+  ALTER TABLE rating
+  ADD `rating_cat` char(2) DEFAULT NULL;
+  
+  UPDATE rating
+  SET rating_cat = FLOOR(rating);
+  
+  ALTER TABLE rating
+  ADD `rating_enum` ENUM('excellent', 'average', 'poor', 'terrible');
+  
+  UPDATE rating
+  SET rating_enum = 'excellent'
+  WHERE rating >= 7.5;
+  
+  UPDATE rating
+  SET rating_enum = 'average'
+  WHERE rating >= 5 AND rating < 7.5;
+  
+  UPDATE rating
+  SET rating_enum = 'poor'
+  WHERE rating >= 2.5 AND rating < 5;
+  
+  UPDATE rating
+  SET rating_enum = 'terrible'
+  WHERE rating < 2.5;
+
