@@ -130,9 +130,37 @@ JOIN votes v ON t.id = v.movie_id
 JOIN rating ra ON t.id = ra.movie_id
 GROUP BY t.id);
 
-# Fjern land fra runtime-tabellen 
+# Fjern land fra runtime-tabellen, deretter normalisering av data
 UPDATE runtimes
 SET runtime = SUBSTRING_INDEX(runtime, ':', -1)
+UPDATE runtimes
+SET runtime = 
+	SUBSTRING_INDEX(
+	SUBSTRING_INDEX(
+	SUBSTRING_INDEX(
+	SUBSTRING_INDEX(
+	SUBSTRING_INDEX(
+	SUBSTRING_INDEX(
+	SUBSTRING_INDEX(
+	SUBSTRING_INDEX(
+	SUBSTRING_INDEX(
+	SUBSTRING_INDEX(
+	SUBSTRING_INDEX(
+	SUBSTRING_INDEX(REPLACE(runtime, ' ', ''), 'm', 1), 
+	's', 1),
+	'\'', 1),
+	'/', 1),
+	',',1),
+	'.',1),
+	';',1),
+	'-',1),
+	'"',1),
+	'x',1),
+	'+',1),
+	'*',1);
+UPDATE runtimes 
+SET runtime = NULL
+where runtime = ' ';
 
 
 # Opprette runtimes-tabellen
