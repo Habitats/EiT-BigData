@@ -116,8 +116,8 @@ CREATE VIEW model1
 AS (
 SELECT t.id AS ID, t.title AS Title, l.language AS Language,
 g.genres AS Genres, r.runtime AS Runtime,mpaa.mpaa AS MPAA,
-rm.release_month AS ReleaseMonth, top.logscore AS TotalActorLogScore,
-top2.logscore AS TotalDirectorLogScore, v.votes AS Votes, ra.rating AS Rating
+rm.release_month AS ReleaseMonth, IFNULL(top.logscore,0) AS TotalActorLogScore,
+IFNULL(top2.logscore,0) AS TotalDirectorLogScore, v.votes AS Votes, ra.rating AS Rating
 FROM title t
 JOIN language l ON t.id = l.movie_id
 JOIN genres g ON t.id = g.movie_id
