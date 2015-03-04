@@ -134,3 +134,22 @@ GROUP BY t.id);
 UPDATE runtimes
 SET runtime = SUBSTRING_INDEX(runtime, ':', -1)
 
+
+# Opprette runtimes-tabellen
+
+CREATE TABLE runtimes (
+   id int(11) unsigned NOT NULL AUTO_INCREMENT,
+   movie_id int(11) DEFAULT NULL,
+   runtime text DEFAULT NULL,
+   PRIMARY KEY (id),
+   CONSTRAINT runtime_movie_id_fk FOREIGN KEY (movie_id) REFERENCES title (id) ON DELETE CASCADE
+ ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+ 
+SET @rank=0;
+INSERT INTO runtimes(
+SELECT @rank:=@rank+1 AS rank, t.id AS movie_id, runtime.info AS runtime
+FROM title t
+JOIN movie_info runtime ON t.id = runtime.movie_id
+WHERE runtime.info_type_id = 1 # runtime
+GROUP BY t.id);
+
