@@ -29,7 +29,7 @@ group by title
 order by gross desc
 limit 1000
 
-# Alle produsert etter år 2000 med minst 1000 stemmer
+# Alle produsert etter Ã¥r 2000 med minst 1000 stemmer
 SELECT title, votes.info as votes, rating.info as rating, money.info as money FROM title
 INNER JOIN movie_info_idx as votes
 ON title.id = votes.movie_id
@@ -44,14 +44,14 @@ AND rating.info_type_id = 101 # rating
 AND money.info_type_id = 107 # money
 AND votes.info > 1000
 
-# Tittel, rating, votes, sjanger, språk, lanseringsdato, profit, plot
-# Returnerer bare første sjanger når filmen har flere sjangere.
-# Dette gjelder også språk, lanseringsdato, profit og plot.
+# Tittel, rating, votes, sjanger, sprÃ¥k, lanseringsdato, profit, plot
+# Returnerer bare fÃ¸rste sjanger nÃ¥r filmen har flere sjangere.
+# Dette gjelder ogsÃ¥ sprÃ¥k, lanseringsdato, profit og plot.
 SELECT t.id, t.title, t.production_year,
 (SELECT info FROM movie_info_idx WHERE info_type_id = 101 AND movie_id = t.id) AS rating,
 (SELECT info FROM movie_info_idx WHERE info_type_id = 100 AND movie_id = t.id) AS votes,
 (SELECT info FROM movie_info WHERE info_type_id = 3 AND movie_id = t.id LIMIT 1) AS sjanger,
-(SELECT info FROM movie_info WHERE info_type_id = 4 AND movie_id = t.id LIMIT 1) AS språk,
+(SELECT info FROM movie_info WHERE info_type_id = 4 AND movie_id = t.id LIMIT 1) AS sprÃ¥k,
 (SELECT info FROM movie_info WHERE info_type_id = 16 AND movie_id = t.id LIMIT 1) AS lanseringsdato,
 (SELECT info FROM movie_info WHERE info_type_id = 107 AND movie_id = t.id LIMIT 1) AS profit,
 (SELECT info FROM movie_info WHERE info_type_id = 98 AND movie_id = t.id LIMIT 1) AS plot
@@ -74,7 +74,7 @@ ENCLOSED BY ''
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS;
 
-# Fjerner tom rad på alle skuespillernavn
+# Fjerner tom rad pÃ¥ alle skuespillernavn
 UPDATE top1000actors SET name=replace(replace(name, '\n', ''),'\r', '')
 
 
@@ -84,8 +84,8 @@ ADD score INT NOT NULL;
 UPDATE top1000actors SET score = ((1000-position) DIV 100) +1 WHERE position BETWEEN 1 AND 1000;
 
 
-# Total skuespiller-score på alle filmer produsert etter år 2000 med 100 votes
-# Tar 2 minutter på LIMIT 10....
+# Total skuespiller-score pÃ¥ alle filmer produsert etter Ã¥r 2000 med 100 votes
+# Tar 2 minutter pÃ¥ LIMIT 10....
 
 SELECT t.id, t.title, t.production_year, rating.info AS imdbScore, votes.info AS votes, SUM(top.score) AS TotalActorScore
 FROM title t
@@ -106,7 +106,7 @@ GROUP BY t.id
 # Legg til ny navn-kolonne i name-tabellen
 ALTER TABLE name
 ADD name2 text NOT NULL;
-# Legg inn navn på format "Fornavn Etternavn" i denne nye kolonnen
+# Legg inn navn pÃ¥ format "Fornavn Etternavn" i denne nye kolonnen
 UPDATE name SET name2 = concat(trim(substring_index(name, ",",-1))," " ,trim(substring_index(name, ",",1))) WHERE id BETWEEN 0 AND 4993554
 
 
@@ -129,3 +129,8 @@ LEFT JOIN director_scores top2 ON top2.movie_id = t.id
 JOIN votes v ON t.id = v.movie_id
 JOIN rating ra ON t.id = ra.movie_id
 GROUP BY t.id);
+
+# Fjern land fra runtime-tabellen 
+UPDATE runtimes
+SET runtime = SUBSTRING_INDEX(runtime, ':', -1)
+
