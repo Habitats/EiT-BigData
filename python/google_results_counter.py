@@ -11,20 +11,21 @@ actor_results = []
 
 def google_count(search_term):
   # Find the number of search results for given search term
-  search_url = GOOGLE_URL + search_term.replace(" ", "+")
+  search_url = GOOGLE_URL + '"' + search_term.replace(" ", "+") + '"'
+  print(search_url)
   r  = requests.get(search_url)
   soup = BeautifulSoup(r.text)
   results = soup.find(id="resultStats")
   count = int("".join(filter(unicode.isdigit, results.text)))
   return count
 
-with open(input_file, 'r') as f:
+with open(input_file, 'rb') as f:
   reader = csv.reader(f)
   next(reader) # Skip header row
   for row in reader:
       actors.append((int(row[0]), row[1])) # starmeter rank, name
 
-with open(output_file, 'w') as csvfile:
+with open(output_file, 'wb') as csvfile:
   a = csv.writer(csvfile, delimiter=',')
   a.writerow(["actor", "starmeter rank", "google results"])
   i = 0
