@@ -298,7 +298,24 @@ GROUP BY t.id);
  WHERE ci.role_id = 8) AS tmp
  GROUP BY movieID;
  
- 
+CREATE VIEW model1_avg
+AS (
+SELECT t.id AS ID, t.title AS Title, l.language AS Language,
+GROUP_CONCAT(g.genres SEPARATOR ',') AS Genres, r.runtime AS Runtime,mpaa.mpaa AS MPAA,
+rm.release_month AS ReleaseMonth, top.avg_actor_score AS AvgActorScore,
+top2.avg_director_score AS AvgDirectorScore, v.votes AS Votes, ra.rating AS Rating,
+ra.rating_cat AS IntegerRating, ra.rating_enum AS RatingCategory
+FROM title t
+JOIN language l ON t.id = l.movie_id
+JOIN genres g ON t.id = g.movie_id
+JOIN runtimes r ON t.id = r.movie_id
+JOIN mpaa_ratings mpaa ON t.id = mpaa.movie_id
+JOIN release_month rm ON t.id = rm.movie_id
+LEFT JOIN actor_scores_imdb top ON top.movie_id = t.id 
+LEFT JOIN director_scores_imdb top2 ON top2.movie_id = t.id 
+JOIN votes v ON t.id = v.movie_id
+JOIN rating ra ON t.id = ra.movie_id
+GROUP BY t.id); 
 
  
  
