@@ -257,6 +257,47 @@ GROUP BY t.id);
  ) AS tmp 
  GROUP BY DirectorID;
  
+ # Average actor-rating for hver film
+ 
+   CREATE TABLE actor_scores_imdb (
+   movie_id int(11) unsigned NOT NULL,
+   avg_actor_score double NOT NULL,
+   PRIMARY KEY (movie_id)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+ 
+ 
+ INSERT INTO actor_scores_imdb
+ SELECT movieID, AVG(actor_score)
+ FROM
+ (SELECT DISTINCT t.id AS movieID, r.avg_score AS actor_score, n.id AS actorID
+ FROM title t
+ JOIN cast_info ci ON t.id = ci.movie_id
+ JOIN name n ON ci.person_id = n.id
+ JOIN actor_avg_rating r ON r.id = n.id
+ WHERE ci.role_id BETWEEN 1 AND 2
+ AND ci.nr_order BETWEEN 1 AND 10 ) AS tmp
+ GROUP BY movieID
+ 
+ # Average director-rating for hver film
+ 
+   CREATE TABLE director_scores_imdb (
+   movie_id int(11) unsigned NOT NULL,
+   avg_director_score double NOT NULL,
+   PRIMARY KEY (movie_id)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+ 
+ 
+ INSERT INTO director_scores_imdb
+ SELECT movieID, AVG(director_score)
+ FROM
+ (SELECT DISTINCT t.id AS movieID, r.avg_score AS director_score, n.id AS actorID
+ FROM title t
+ JOIN cast_info ci ON t.id = ci.movie_id
+ JOIN name n ON ci.person_id = n.id
+ JOIN director_avg_rating r ON r.id = n.id
+ WHERE ci.role_id = 8) AS tmp
+ GROUP BY movieID;
+ 
  
 
  
