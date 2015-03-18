@@ -5,6 +5,7 @@ import csv
 """
   This script inserts data from the given input file into the
   actors_starmeter_google table in the database
+  NB! Does not delete old data
 
   CREATE TABLE `actors_starmeter_google` (
     `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
