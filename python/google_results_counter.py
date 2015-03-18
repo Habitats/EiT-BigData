@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import csv
 import os
+import time
 
 GOOGLE_URL = "https://www.google.no/search?q="
 input_file = "starmeter_actor_rankings.csv"
@@ -43,9 +44,15 @@ with open(output_file, 'ab') as csvfile:
   a = csv.writer(csvfile, delimiter=',')
   i = 0
   for starmeter_rank, actor in actors[start_index:]:
-    a.writerow((actor, starmeter_rank, google_count(actor)))
+    blockedByGoogle = True
+    while(blockedByGoogle):
+      try:
+        a.writerow((actor, starmeter_rank, google_count(actor)))
+        blockedByGoogle = False
+      except AttributeError:
+        print("Blocked by google :(")
+        time.sleep(60*60)
     if i%10 == 0:
       csvfile.flush()
       print(i)
     i += 1
-
