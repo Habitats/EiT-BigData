@@ -1,4 +1,3 @@
-# Python 3
 from bs4 import BeautifulSoup
 import requests
 import csv
@@ -19,7 +18,7 @@ def google_count(search_term):
   count = int("".join(filter(str.isdigit, results.text)))
   return count
 
-with open(input_file, 'r', newline='') as f:
+with open(input_file, 'r') as f:
   reader = csv.reader(f)
   next(reader) # Skip header row
   for row in reader:
