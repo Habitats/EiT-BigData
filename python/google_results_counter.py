@@ -4,7 +4,7 @@ import csv
 
 GOOGLE_URL = "https://www.google.no/search?q="
 input_file = "starmeter_actor_rankings.csv"
-output_file = "google_and_starmeter_actor_rankings.csv"
+output_file = "google_and_starmeter_actor_rankings2.csv"
 
 actors = []
 actor_results = []
@@ -15,7 +15,7 @@ def google_count(search_term):
   r  = requests.get(search_url)
   soup = BeautifulSoup(r.text)
   results = soup.find(id="resultStats")
-  count = int("".join(filter(str.isdigit, results.text)))
+  count = int("".join(filter(unicode.isdigit, results.text)))
   return count
 
 with open(input_file, 'r') as f:
@@ -24,11 +24,14 @@ with open(input_file, 'r') as f:
   for row in reader:
       actors.append((int(row[0]), row[1])) # starmeter rank, name
 
-for starmeter_rank, actor in actors:
-  actor_results.append((actor, starmeter_rank, google_count(actor)))
-
-with open(output_file, 'w', newline='') as csvfile:
+with open(output_file, 'w') as csvfile:
   a = csv.writer(csvfile, delimiter=',')
   a.writerow(["actor", "starmeter rank", "google results"])
-  a.writerows(actor_results)
+  i = 0
+  for starmeter_rank, actor in actors:
+    a.writerow((actor, starmeter_rank, google_count(actor)))
+    if i%100 == 0:
+      csvfile.flush()
+      print(i)
+    i += 1
 
