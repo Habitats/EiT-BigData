@@ -25,7 +25,7 @@ with open(input_file, 'r', newline='') as f:
   for row in reader:
       actors.append((int(row[0]), row[1])) # starmeter rank, name
 
-for starmeter_rank, actor in actors[:100]:
+for starmeter_rank, actor in actors:
   actor_results.append((actor, starmeter_rank, google_count(actor)))
 
 with open(output_file, 'w', newline='') as csvfile:
