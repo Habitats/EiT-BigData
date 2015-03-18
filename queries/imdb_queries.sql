@@ -213,3 +213,31 @@ GROUP BY t.id);
   SET rating_enum = 'terrible'
   WHERE rating < 2.5;
 
+  
+  # Average IMDb rating for actors
+  
+  CREATE TABLE actor_avg_rating (
+   id int(11) unsigned NOT NULL,
+   avg_score double NOT NULL,
+   count int(11) NOT NULL,
+   PRIMARY KEY (id)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+ 
+ INSERT INTO actor_avg_rating
+ SELECT ActorID, AVG(Rating) AS AvgRating, COUNT(*) AS count
+ FROM
+ (SELECT DISTINCT t.id AS MovieID, r.rating AS Rating, n.id AS ActorID 
+ FROM title t
+ JOIN cast_info ci ON t.id = ci.movie_id
+ JOIN name n ON ci.person_id = n.id
+ JOIN rating r ON t.id = r.movie_id
+ WHERE ci.role_id BETWEEN 1 AND 2 # Actor or Actress
+ AND ci.nr_order BETWEEN 1 AND 10 # Top 10 fra hver film
+ ) AS tmp 
+ GROUP BY ActorID
+ HAVING count > 5;
+ 
+ 
+
+ 
+ 
