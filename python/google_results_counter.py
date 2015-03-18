@@ -4,7 +4,7 @@ import csv
 
 GOOGLE_URL = "https://www.google.no/search?q="
 input_file = "starmeter_actor_rankings.csv"
-output_file = "google_and_starmeter_actor_rankings2.csv"
+output_file = "google_and_starmeter_actor_rankings9000.csv"
 
 actors = []
 actor_results = []
@@ -28,7 +28,7 @@ with open(output_file, 'w') as csvfile:
   a = csv.writer(csvfile, delimiter=',')
   a.writerow(["actor", "starmeter rank", "google results"])
   i = 0
-  for starmeter_rank, actor in actors:
+  for starmeter_rank, actor in actors[9000:]:
     a.writerow((actor, starmeter_rank, google_count(actor)))
     if i%100 == 0:
       csvfile.flush()
