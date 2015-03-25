@@ -28,7 +28,7 @@ with open(input_file, 'r') as f:
     
 try:
   # Connect to database
-  con = mdb.connect('bigdata.no-ip.org', 'root', 'bigeit', 'imdb_movies', use_unicode=True, charset='utf8')
+  con = mdb.connect('localhost', 'root', 'bigeit', 'imdb_movies', use_unicode=True, charset='utf8')
   cur = con.cursor()
 
   for name, starmeter, google in actors:
