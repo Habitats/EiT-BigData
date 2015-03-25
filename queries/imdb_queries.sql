@@ -333,3 +333,22 @@ UPDATE actors_starmeter_google a
 JOIN name n ON n.name2 = a.name 
 SET a.person_id = n.id
  
+# Add categorical runtimes to runtime
+  ALTER TABLE runtimes
+  ADD `runtime_enum` ENUM('Very Short', 'Short', 'Medium', 'Long');
+  
+  UPDATE runtimes
+  SET runtime_enum = 'Very Short'
+  WHERE runtime BETWEEN 0 AND 90;
+  
+  UPDATE runtimes
+  SET runtime_enum = 'Short'
+  WHERE runtime BETWEEN 91 AND 105;
+  
+  UPDATE runtimes
+  SET runtime_enum = 'Medium'
+  WHERE runtime BETWEEN 106 AND 120;
+  
+  UPDATE runtimes
+  SET runtime_enum = 'Long'
+  WHERE runtime > 120;
