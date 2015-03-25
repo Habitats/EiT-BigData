@@ -110,32 +110,6 @@ ADD name2 text NOT NULL;
 UPDATE name SET name2 = concat(trim(substring_index(name, ",",-1))," " ,trim(substring_index(name, ",",1))) WHERE id BETWEEN 0 AND 4993554
 
 
-#View for model1
-
-CREATE VIEW model1
-AS (
-SELECT t.id AS ID, t.title AS Title, l.language AS Language,
-GROUP_CONCAT(g.genres SEPARATOR ',') AS Genres, r.runtime AS Runtime,mpaa.mpaa AS MPAA,
-rm.release_month AS ReleaseMonth, IFNULL(top.logscore,0) AS TotalActorLogScore,
-IFNULL(top2.logscore,0) AS TotalDirectorLogScore, v.votes AS Votes, ra.rating AS Rating,
-ra.rating_cat AS IntegerRating, ra.rating_enum AS RatingCategory, bu.usd_budget AS UsdBudget,
-bu.i_adj_usd_budget AS UsdAdjBudget, gr.usd_gross AS UsdGross, gr.i_adj_usd_gross AS UsdAdjGross,
-AVG(gs.avg_rating) AS GenreRating
-FROM title t
-JOIN language l ON t.id = l.movie_id
-JOIN genres g ON t.id = g.movie_id
-JOIN runtimes r ON t.id = r.movie_id
-JOIN mpaa_ratings mpaa ON t.id = mpaa.movie_id
-JOIN release_month rm ON t.id = rm.movie_id
-LEFT JOIN actor_scores top ON top.movie_id = t.id 
-LEFT JOIN director_scores top2 ON top2.movie_id = t.id 
-JOIN votes v ON t.id = v.movie_id
-JOIN rating ra ON t.id = ra.movie_id
-JOIN budget bu ON t.id = bu.movie_id
-JOIN gross gr ON t.id = gr.movie_id
-JOIN genre_score gs ON g.genres = gs.genre
-GROUP BY t.id);
-
 # Fjern land fra runtime-tabellen, deretter normalisering av data
 UPDATE runtimes
 SET runtime = SUBSTRING_INDEX(runtime, ':', -1)
@@ -297,25 +271,6 @@ GROUP BY t.id);
  JOIN director_avg_rating r ON r.id = n.id
  WHERE ci.role_id = 8) AS tmp
  GROUP BY movieID;
- 
-CREATE VIEW model1_avg
-AS (
-SELECT t.id AS ID, t.title AS Title, l.language AS Language,
-GROUP_CONCAT(g.genres SEPARATOR ',') AS Genres, r.runtime AS Runtime,mpaa.mpaa AS MPAA,
-rm.release_month AS ReleaseMonth, top.avg_actor_score AS AvgActorScore,
-top2.avg_director_score AS AvgDirectorScore, v.votes AS Votes, ra.rating AS Rating,
-ra.rating_cat AS IntegerRating, ra.rating_enum AS RatingCategory
-FROM title t
-JOIN language l ON t.id = l.movie_id
-JOIN genres g ON t.id = g.movie_id
-JOIN runtimes r ON t.id = r.movie_id
-JOIN mpaa_ratings mpaa ON t.id = mpaa.movie_id
-JOIN release_month rm ON t.id = rm.movie_id
-LEFT JOIN actor_scores_imdb top ON top.movie_id = t.id 
-LEFT JOIN director_scores_imdb top2 ON top2.movie_id = t.id 
-JOIN votes v ON t.id = v.movie_id
-JOIN rating ra ON t.id = ra.movie_id
-GROUP BY t.id); 
 
  
 #Legge inn google og starmeter i databasen
@@ -359,3 +314,52 @@ SET @maax= (SELECT MAX(log(google_results)) FROM actors_starmeter_google);
 
 UPDATE actors_starmeter_google a 
 SET a.google_score = log(a.google_results)/@maax;
+
+
+## VIEWS basert på samme filmer (256390 stk)
+
+CREATE TABLE view_maker AS
+SELECT t.id AS ID, t.title AS Title, l.language AS Language,
+r.runtime AS Runtime, r.runtime_enum AS RuntimeCategory, mpaa.mpaa AS MPAA,
+rm.release_month AS ReleaseMonth, asi.avg_actor_score AS TotalActorScore,
+dsi.avg_director_score AS TotalDirectorScore,
+IFNULL(top.logscore,0) AS TotalActorLogScore,IFNULL(top2.logscore,0) AS TotalDirectorLogScore,
+v.votes AS Votes, ra.rating AS Rating,
+ra.rating_cat AS IntegerRating, ra.rating_enum AS RatingCategory, bu.usd_budget AS UsdBudget,
+bu.i_adj_usd_budget AS UsdAdjBudget, gr.usd_gross AS UsdGross, gr.i_adj_usd_gross AS UsdAdjGross,
+AVG(gs.avg_rating) AS GenreRating
+FROM title t
+JOIN rating ra ON t.id = ra.movie_id
+LEFT JOIN language l ON t.id = l.movie_id
+LEFT JOIN genres g ON t.id = g.movie_id
+LEFT JOIN runtimes r ON t.id = r.movie_id
+LEFT JOIN mpaa_ratings mpaa ON t.id = mpaa.movie_id
+LEFT JOIN release_month rm ON t.id = rm.movie_id
+LEFT JOIN actor_scores_imdb asi ON asi.movie_id = t.id 
+LEFT JOIN director_scores_imdb dsi ON dsi.movie_id = t.id 
+LEFT JOIN actor_scores top ON top.movie_id = t.id 
+LEFT JOIN director_scores top2 ON top2.movie_id = t.id 
+LEFT JOIN votes v ON t.id = v.movie_id
+LEFT JOIN budget bu ON t.id = bu.movie_id
+LEFT JOIN gross gr ON t.id = gr.movie_id
+LEFT JOIN genre_score gs ON g.genres = gs.genre
+GROUP BY t.id
+
+# View model1
+
+CREATE VIEW model1
+AS (
+SELECT ID, Title, Runtime, MPAA, ReleaseMonth, TotalActorLogScore AS TotalActorScore,
+TotalDirectorLogScore AS TotalDirectorScore, RatingCategory
+FROM view_maker
+);
+
+# View model2
+
+CREATE VIEW model2
+AS (
+SELECT ID, Title, RuntimeCategory AS Runtime, MPAA, ReleaseMonth, TotalActorScore,
+TotalDirectorScore, Language, UsdAdjBudget, UsdAdjGross, GenreRating, RatingCategory AS Rating
+FROM view_maker
+);
+
