@@ -318,4 +318,18 @@ JOIN rating ra ON t.id = ra.movie_id
 GROUP BY t.id); 
 
  
+#Legge inn google og starmeter i databasen
+ 
+LOAD DATA LOCAL INFILE 'c:/google_and_starmeter_actor_rankings.csv'
+INTO TABLE actors_startmeter_google
+FIELDS TERMINATED BY ',' 
+ENCLOSED BY ''
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS(name,starmeter_position,google_results);
+
+#Legge til person-id i tabellen
+
+UPDATE actors_starmeter_google a 
+JOIN name n ON n.name2 = a.name 
+SET a.person_id = n.id
  
