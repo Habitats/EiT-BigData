@@ -321,7 +321,7 @@ GROUP BY t.id);
 #Legge inn google og starmeter i databasen
  
 LOAD DATA LOCAL INFILE 'c:/google_and_starmeter_actor_rankings.csv'
-INTO TABLE actors_startmeter_google
+INTO TABLE actors_starmeter_google
 FIELDS TERMINATED BY ',' 
 ENCLOSED BY ''
 LINES TERMINATED BY '\n'
@@ -352,3 +352,10 @@ SET a.person_id = n.id
   UPDATE runtimes
   SET runtime_enum = 'Long'
   WHERE runtime > 120;
+
+# Google-score, normalisert
+  
+SET @maax= (SELECT MAX(log(google_results)) FROM actors_starmeter_google);
+
+UPDATE actors_starmeter_google a 
+SET a.google_score = log(a.google_results)/@maax;
