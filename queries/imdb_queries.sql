@@ -359,8 +359,22 @@ FROM view_maker
 
 CREATE VIEW model2
 AS (
-SELECT ID, Title, RuntimeCategory AS Runtime, MPAA, ReleaseMonth, TotalActorScore,
+SELECT ID, Title, RuntimeCategory AS Runtime, TotalActorScore,
 TotalDirectorScore, Language, UsdAdjBudget, UsdAdjGross, GenreRating, RatingCategory AS Rating
+FROM view_maker
+);
+
+# View model3
+
+CREATE VIEW model3
+AS (
+SELECT ID, Title, RuntimeCategory AS Runtime, TotalActorScore,
+TotalDirectorScore, Language, UsdAdjBudget,
+(SELECT CASE
+WHEN UsdAdjGross<=exp(13) THEN 'Low'
+WHEN UsdAdjGross>exp(13) AND UsdAdjGross<=exp(18) THEN 'Medium'
+WHEN UsdAdjGross>exp(18) THEN 'High' END) AS UsdAdjGross,
+GenreRating, RatingCategory AS Rating
 FROM view_maker
 );
 
