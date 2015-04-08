@@ -316,6 +316,27 @@ UPDATE actors_starmeter_google a
 SET a.google_score = log(a.google_results)/@maax;
 
 
+# Average actor-rating2 for hver film
+ 
+   CREATE TABLE actor_scores_stargoogle (
+   movie_id int(11) unsigned NOT NULL,
+   avg_actor_score double NOT NULL,
+   PRIMARY KEY (movie_id)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+ 
+ 
+ INSERT INTO actor_scores_stargoogle
+ SELECT movieID, AVG(actor_score)
+ FROM
+ (SELECT DISTINCT t.id AS movieID, (a.starmeter_score+a.google_score)/2 AS actor_score, n.id AS actorID
+ FROM title t
+ JOIN cast_info ci ON t.id = ci.movie_id
+ JOIN name n ON ci.person_id = n.id
+ JOIN actors_starmeter_google a ON a.person_id = n.id
+ WHERE ci.role_id BETWEEN 1 AND 2
+ AND ci.nr_order BETWEEN 1 AND 10 ) AS tmp
+ GROUP BY movieID
+
 ## VIEWS basert på samme filmer (46454 stk)
 ## Kun filmer med verdier for rating og budsjett
 
@@ -323,12 +344,11 @@ CREATE TABLE view_maker AS
 SELECT t.id AS ID, t.title AS Title, l.language AS Language,
 r.runtime AS Runtime, r.runtime_enum AS RuntimeCategory, mpaa.mpaa AS MPAA,
 rm.release_month AS ReleaseMonth, asi.avg_actor_score AS TotalActorScore,
-dsi.avg_director_score AS TotalDirectorScore,
-IFNULL(top.logscore,0) AS TotalActorLogScore,IFNULL(top2.logscore,0) AS TotalDirectorLogScore,
-v.votes AS Votes, ra.rating AS Rating,
-ra.rating_cat AS IntegerRating, ra.rating_enum AS RatingCategory, bu.usd_budget AS UsdBudget,
-bu.i_adj_usd_budget AS UsdAdjBudget, gr.usd_gross AS UsdGross, gr.i_adj_usd_gross AS UsdAdjGross,
-AVG(gs.avg_rating) AS GenreRating
+dsi.avg_director_score AS TotalDirectorScore, IFNULL(star.avg_actor_score,0) AS TotalActorScore2,
+IFNULL(top.logscore,0) AS TotalActorLogScore, IFNULL(top2.logscore,0) AS TotalDirectorLogScore,
+v.votes AS Votes, ra.rating AS Rating,ra.rating_cat AS IntegerRating, ra.rating_enum AS RatingCategory,
+bu.usd_budget AS UsdBudget, bu.i_adj_usd_budget AS UsdAdjBudget, gr.usd_gross AS UsdGross,
+gr.i_adj_usd_gross AS UsdAdjGross, AVG(gs.avg_rating) AS GenreRating
 FROM title t
 JOIN rating ra ON t.id = ra.movie_id
 LEFT JOIN language l ON t.id = l.movie_id
@@ -340,6 +360,7 @@ LEFT JOIN actor_scores_imdb asi ON asi.movie_id = t.id
 LEFT JOIN director_scores_imdb dsi ON dsi.movie_id = t.id 
 LEFT JOIN actor_scores top ON top.movie_id = t.id 
 LEFT JOIN director_scores top2 ON top2.movie_id = t.id 
+LEFT JOIN actor_scores_stargoogle star ON star.movie_id = t.id 
 LEFT JOIN votes v ON t.id = v.movie_id
 JOIN budget bu ON t.id = bu.movie_id
 LEFT JOIN gross gr ON t.id = gr.movie_id
@@ -378,3 +399,15 @@ GenreRating, RatingCategory AS Rating
 FROM view_maker
 );
 
+
+# View model4
+
+CREATE VIEW model4
+AS (
+SELECT ID, Title, RuntimeCategory AS Runtime, TotalActorScore2,
+TotalDirectorScore, Language, UsdAdjBudget, UsdAdjGross,
+GenreRating, RatingCategory AS Rating
+FROM view_maker
+);
+
+ 
