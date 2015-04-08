@@ -294,15 +294,15 @@ SET a.person_id = n.id
   
   UPDATE runtimes
   SET runtime_enum = 'Very Short'
-  WHERE runtime BETWEEN 0 AND 90;
+  WHERE runtime BETWEEN 0 AND 50;
   
   UPDATE runtimes
   SET runtime_enum = 'Short'
-  WHERE runtime BETWEEN 91 AND 105;
+  WHERE runtime BETWEEN 51 AND 90;
   
   UPDATE runtimes
   SET runtime_enum = 'Medium'
-  WHERE runtime BETWEEN 106 AND 120;
+  WHERE runtime BETWEEN 90 AND 120;
   
   UPDATE runtimes
   SET runtime_enum = 'Long'
