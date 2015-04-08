@@ -316,7 +316,8 @@ UPDATE actors_starmeter_google a
 SET a.google_score = log(a.google_results)/@maax;
 
 
-## VIEWS basert på samme filmer (256390 stk)
+## VIEWS basert på samme filmer (46454 stk)
+## Kun filmer med verdier for rating og budsjett
 
 CREATE TABLE view_maker AS
 SELECT t.id AS ID, t.title AS Title, l.language AS Language,
@@ -340,7 +341,7 @@ LEFT JOIN director_scores_imdb dsi ON dsi.movie_id = t.id
 LEFT JOIN actor_scores top ON top.movie_id = t.id 
 LEFT JOIN director_scores top2 ON top2.movie_id = t.id 
 LEFT JOIN votes v ON t.id = v.movie_id
-LEFT JOIN budget bu ON t.id = bu.movie_id
+JOIN budget bu ON t.id = bu.movie_id
 LEFT JOIN gross gr ON t.id = gr.movie_id
 LEFT JOIN genre_score gs ON g.genres = gs.genre
 GROUP BY t.id
