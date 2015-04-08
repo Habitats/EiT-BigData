@@ -405,7 +405,11 @@ FROM view_maker
 CREATE VIEW model4
 AS (
 SELECT ID, Title, RuntimeCategory AS Runtime, TotalActorScore2,
-TotalDirectorScore, Language, UsdAdjBudget, UsdAdjGross,
+TotalDirectorScore, Language, 
+(SELECT CASE
+WHEN UsdAdjGross<=exp(10) THEN 'Low'
+WHEN UsdAdjGross>exp(10) AND UsdAdjGross<=exp(13.5) THEN 'Medium'
+WHEN UsdAdjGross>exp(13.5) THEN 'High' END) AS UsdAdjBudget, UsdAdjGross,
 GenreRating, RatingCategory AS Rating
 FROM view_maker
 );
