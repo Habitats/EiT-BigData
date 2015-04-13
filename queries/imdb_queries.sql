@@ -187,6 +187,52 @@ GROUP BY t.id);
   SET rating_enum = 'terrible'
   WHERE rating < 2.5;
 
+  #ACTOR_SCORES
+
+	CREATE TABLE actor_scores (
+	   id int(11) unsigned NOT NULL AUTO_INCREMENT,
+	   movie_id int(11) DEFAULT NULL,
+	   score int(11) NOT NULL,
+	   logscore double NOT NULL,
+	   PRIMARY KEY (id),
+	   CONSTRAINT actor_scores_movie_id_fk FOREIGN KEY (movie_id) REFERENCES title (id) ON DELETE CASCADE
+	 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8; 
+	 
+	SET @rank=0;
+	INSERT INTO actor_scores(
+	SELECT @rank:=@rank+1 AS rank, t.id AS ID,
+	SUM(top.score) AS TotalActorScore,
+	SUM(top.logscore) AS TotalActorLogScore
+	FROM title t
+	JOIN cast_info ci ON t.id = ci.movie_id
+	JOIN name n ON ci.person_id = n.id
+	JOIN top1000actors top ON top.name_id = n.id 
+	WHERE ci.role_id BETWEEN 1 AND 2
+	GROUP BY t.id);
+
+#DIRECTOR_SCORES
+
+	CREATE TABLE director_scores (
+	   id int(11) unsigned NOT NULL AUTO_INCREMENT,
+	   movie_id int(11) DEFAULT NULL,
+	   score int(11) NOT NULL,
+	   logscore double NOT NULL,
+	   PRIMARY KEY (id),
+	   CONSTRAINT director_scores_movie_id_fk FOREIGN KEY (movie_id) REFERENCES title (id) ON DELETE CASCADE
+	 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8; 
+	 
+	SET @rank=0;
+	INSERT INTO director_scores(
+	SELECT @rank:=@rank+1 AS rank, t.id AS ID,
+	SUM(top.score) AS TotalDirectorScore,
+	SUM(top.logscore) AS TotalDirectorLogScore
+	FROM title t
+	JOIN cast_info ci ON t.id = ci.movie_id
+	JOIN name n ON ci.person_id = n.id
+	JOIN top200directors top ON top.name_id = n.id 
+	WHERE ci.role_id = 8
+	GROUP BY t.id);
+  
   
   # Average IMDb rating for actors
   
@@ -343,9 +389,9 @@ SET a.google_score = log(a.google_results)/@maax;
 CREATE TABLE view_maker AS
 SELECT t.id AS ID, t.title AS Title, l.language AS Language,
 r.runtime AS Runtime, r.runtime_enum AS RuntimeCategory, mpaa.mpaa AS MPAA,
-rm.release_month AS ReleaseMonth, asi.avg_actor_score AS TotalActorScore,
-dsi.avg_director_score AS TotalDirectorScore, IFNULL(star.avg_actor_score,0) AS TotalActorScore2,
-IFNULL(top.logscore,0) AS TotalActorLogScore, IFNULL(top2.logscore,0) AS TotalDirectorLogScore,
+rm.release_month AS ReleaseMonth, IFNULL(top.logscore,0) AS TotalActorScore,
+IFNULL(top2.logscore,0) AS TotalDirectorScore, asi.avg_actor_score AS TotalActorScore2,
+dsi.avg_director_score AS TotalDirectorScore2, IFNULL(star.avg_actor_score,0) AS TotalActorScore3,
 v.votes AS Votes, ra.rating AS Rating,ra.rating_cat AS IntegerRating, ra.rating_enum AS RatingCategory,
 bu.usd_budget AS UsdBudget, bu.i_adj_usd_budget AS UsdAdjBudget, gr.usd_gross AS UsdGross,
 gr.i_adj_usd_gross AS UsdAdjGross, AVG(gs.avg_rating) AS GenreRating
@@ -365,14 +411,14 @@ LEFT JOIN votes v ON t.id = v.movie_id
 JOIN budget bu ON t.id = bu.movie_id
 LEFT JOIN gross gr ON t.id = gr.movie_id
 LEFT JOIN genre_score gs ON g.genres = gs.genre
-GROUP BY t.id
+GROUP BY t.id;
 
 # View model1
 
 CREATE VIEW model1
 AS (
-SELECT ID, Title, Runtime, MPAA, ReleaseMonth, TotalActorLogScore AS TotalActorScore,
-TotalDirectorLogScore AS TotalDirectorScore, RatingCategory
+SELECT ID, Title, Runtime, MPAA, ReleaseMonth, TotalActorScore,
+TotalDirectorScore, RatingCategory
 FROM view_maker
 );
 
@@ -380,8 +426,8 @@ FROM view_maker
 
 CREATE VIEW model2
 AS (
-SELECT ID, Title, RuntimeCategory AS Runtime, TotalActorScore,
-TotalDirectorScore, Language, UsdAdjBudget, UsdAdjGross, GenreRating, RatingCategory AS Rating
+SELECT ID, Title, RuntimeCategory, TotalActorScore2,
+TotalDirectorScore2, Language, UsdAdjBudget, GenreRating, RatingCategory
 FROM view_maker
 );
 
@@ -389,28 +435,12 @@ FROM view_maker
 
 CREATE VIEW model3
 AS (
-SELECT ID, Title, RuntimeCategory AS Runtime, TotalActorScore,
-TotalDirectorScore, Language, UsdAdjBudget,
+SELECT ID, Title,
+TotalActorScore2,TotalDirectorScore2, UsdAdjBudget,
 (SELECT CASE
 WHEN UsdAdjGross<=exp(13) THEN 'Low'
-WHEN UsdAdjGross>exp(13) AND UsdAdjGross<=exp(18) THEN 'Medium'
-WHEN UsdAdjGross>exp(18) THEN 'High' END) AS UsdAdjGross,
-GenreRating, RatingCategory AS Rating
-FROM view_maker
-);
-
-
-# View model4
-
-CREATE VIEW model4
-AS (
-SELECT ID, Title, RuntimeCategory AS Runtime, TotalActorScore2,
-TotalDirectorScore, Language, 
-(SELECT CASE
-WHEN UsdAdjGross<=exp(10) THEN 'Low'
-WHEN UsdAdjGross>exp(10) AND UsdAdjGross<=exp(13.5) THEN 'Medium'
-WHEN UsdAdjGross>exp(13.5) THEN 'High' END) AS UsdAdjBudget, UsdAdjGross,
-GenreRating, RatingCategory AS Rating
+WHEN UsdAdjGross>exp(13) AND UsdAdjGross<=exp(17) THEN 'Medium'
+WHEN UsdAdjGross>exp(17) THEN 'High' END) AS UsdAdjGross
 FROM view_maker
 );
 
