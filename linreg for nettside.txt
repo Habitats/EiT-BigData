@@ -1,0 +1,22 @@
+library(RMySQL)
+
+con <- dbConnect(MySQL(),user="root", password="bigeit", dbname="imdb_movies",
+                 host="bigdata.no-ip.org")
+
+#Linear regression model3				 
+				 
+sql = 'SELECT TotalActorScore2 AS ActorScore, TotalDirectorScore2 AS DirectorScore , UsdAdjBudget AS Budget, UsdAdjGross AS Gross FROM view_maker
+WHERE TotalActorScore2 IS NOT NULL AND TotalDirectorScore2 IS NOT NULL AND UsdAdjBudget IS NOT NULL AND UsdAdjGross IS NOT NULL'
+
+mod = lm(data$Gross ~ data$Budget + data$ActorScore + data$DirectorScore)
+
+
+Coefficients:
+       (Intercept)         data$Budget     data$ActorScore  data$DirectorScore  
+        -2.161e+07           1.087e+00          -2.772e+05           4.363e+06
+		
+		
+
+Altså:
+
+Gross = -2.161e+07 + 1.087e+00 * budget -2.772e+05 * ActorScore + 4.363e+06 * DirectorScore 
