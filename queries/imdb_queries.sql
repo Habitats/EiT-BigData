@@ -194,6 +194,7 @@ GROUP BY t.id);
 	   movie_id int(11) DEFAULT NULL,
 	   score int(11) NOT NULL,
 	   logscore double NOT NULL,
+	   count int(11) NOT NULL,
 	   PRIMARY KEY (id),
 	   CONSTRAINT actor_scores_movie_id_fk FOREIGN KEY (movie_id) REFERENCES title (id) ON DELETE CASCADE
 	 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8; 
@@ -201,8 +202,9 @@ GROUP BY t.id);
 	SET @rank=0;
 	INSERT INTO actor_scores(
 	SELECT @rank:=@rank+1 AS rank, t.id AS ID,
-	SUM(top.score) AS TotalActorScore,
-	SUM(top.logscore) AS TotalActorLogScore
+	SUM(top.score) AS score,
+	SUM(top.logscore) AS logscore,
+	COUNT(*) AS count
 	FROM title t
 	JOIN cast_info ci ON t.id = ci.movie_id
 	JOIN name n ON ci.person_id = n.id
@@ -224,8 +226,8 @@ GROUP BY t.id);
 	SET @rank=0;
 	INSERT INTO director_scores(
 	SELECT @rank:=@rank+1 AS rank, t.id AS ID,
-	SUM(top.score) AS TotalDirectorScore,
-	SUM(top.logscore) AS TotalDirectorLogScore
+	AVG(top.score) AS score,
+	AVG(top.logscore) AS logscore
 	FROM title t
 	JOIN cast_info ci ON t.id = ci.movie_id
 	JOIN name n ON ci.person_id = n.id
@@ -362,19 +364,22 @@ UPDATE actors_starmeter_google a
 SET a.google_score = log(a.google_results)/@maax;
 
 
-# Average actor-rating2 for hver film
+# Average actor-rating3 for hver film
  
-   CREATE TABLE actor_scores_stargoogle (
+CREATE TABLE actor_scores_stargoogle (
    movie_id int(11) unsigned NOT NULL,
-   avg_actor_score double NOT NULL,
+   starmeter double NOT NULL,
+   google double NOT NULL,
    PRIMARY KEY (movie_id)
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
  
  
  INSERT INTO actor_scores_stargoogle
- SELECT movieID, AVG(actor_score)
+ SELECT movieID, SUM(star), SUM(google) 
  FROM
- (SELECT DISTINCT t.id AS movieID, (a.starmeter_score+a.google_score)/2 AS actor_score, n.id AS actorID
+ (SELECT DISTINCT t.id AS movieID,  n.id AS actorID,
+ a.starmeter_score AS star,
+ a.google_score AS google
  FROM title t
  JOIN cast_info ci ON t.id = ci.movie_id
  JOIN name n ON ci.person_id = n.id
@@ -389,9 +394,10 @@ SET a.google_score = log(a.google_results)/@maax;
 CREATE TABLE view_maker AS
 SELECT t.id AS ID, t.title AS Title, l.language AS Language,
 r.runtime AS Runtime, r.runtime_enum AS RuntimeCategory, mpaa.mpaa AS MPAA,
-rm.release_month AS ReleaseMonth, IFNULL(top.logscore,0) AS TotalActorScore,
-IFNULL(top2.logscore,0) AS TotalDirectorScore, asi.avg_actor_score AS TotalActorScore2,
-dsi.avg_director_score AS TotalDirectorScore2, IFNULL(star.avg_actor_score,0) AS TotalActorScore3,
+rm.release_month AS ReleaseMonth, 
+IFNULL(top.score,0) AS TotalActorScore, IFNULL(top2.score,0) AS TotalDirectorScore,
+asi.avg_actor_score AS TotalActorScore2, dsi.avg_director_score AS TotalDirectorScore2,
+IFNULL(star.starmeter,0) AS TotalStarMeterScore, IFNULL(star.google,0) AS TotalGoogleScore,
 v.votes AS Votes, ra.rating AS Rating,ra.rating_cat AS IntegerRating, ra.rating_enum AS RatingCategory,
 bu.usd_budget AS UsdBudget, bu.i_adj_usd_budget AS UsdAdjBudget, gr.usd_gross AS UsdGross,
 gr.i_adj_usd_gross AS UsdAdjGross, AVG(gs.avg_rating) AS GenreRating
@@ -437,6 +443,19 @@ CREATE VIEW model3
 AS (
 SELECT ID, Title,
 TotalActorScore2,TotalDirectorScore2, UsdAdjBudget,
+(SELECT CASE
+WHEN UsdAdjGross<=exp(13) THEN 'Low'
+WHEN UsdAdjGross>exp(13) AND UsdAdjGross<=exp(17) THEN 'Medium'
+WHEN UsdAdjGross>exp(17) THEN 'High' END) AS UsdAdjGross
+FROM view_maker
+);
+
+# View model4
+
+CREATE VIEW model4
+AS (
+SELECT ID, Title,
+TotalStarMeterScore, TotalGoogleScore, TotalDirectorScore2, UsdAdjBudget,
 (SELECT CASE
 WHEN UsdAdjGross<=exp(13) THEN 'Low'
 WHEN UsdAdjGross>exp(13) AND UsdAdjGross<=exp(17) THEN 'Medium'
