@@ -110,32 +110,6 @@ ADD name2 text NOT NULL;
 UPDATE name SET name2 = concat(trim(substring_index(name, ",",-1))," " ,trim(substring_index(name, ",",1))) WHERE id BETWEEN 0 AND 4993554
 
 
-#View for model1
-
-CREATE VIEW model1
-AS (
-SELECT t.id AS ID, t.title AS Title, l.language AS Language,
-GROUP_CONCAT(g.genres SEPARATOR ',') AS Genres, r.runtime AS Runtime,mpaa.mpaa AS MPAA,
-rm.release_month AS ReleaseMonth, IFNULL(top.logscore,0) AS TotalActorLogScore,
-IFNULL(top2.logscore,0) AS TotalDirectorLogScore, v.votes AS Votes, ra.rating AS Rating,
-ra.rating_cat AS IntegerRating, ra.rating_enum AS RatingCategory, bu.usd_budget AS UsdBudget,
-bu.i_adj_usd_budget AS UsdAdjBudget, gr.usd_gross AS UsdGross, gr.i_adj_usd_gross AS UsdAdjGross,
-AVG(gs.avg_rating) AS GenreRating
-FROM title t
-JOIN language l ON t.id = l.movie_id
-JOIN genres g ON t.id = g.movie_id
-JOIN runtimes r ON t.id = r.movie_id
-JOIN mpaa_ratings mpaa ON t.id = mpaa.movie_id
-JOIN release_month rm ON t.id = rm.movie_id
-LEFT JOIN actor_scores top ON top.movie_id = t.id 
-LEFT JOIN director_scores top2 ON top2.movie_id = t.id 
-JOIN votes v ON t.id = v.movie_id
-JOIN rating ra ON t.id = ra.movie_id
-JOIN budget bu ON t.id = bu.movie_id
-JOIN gross gr ON t.id = gr.movie_id
-JOIN genre_score gs ON g.genres = gs.genre
-GROUP BY t.id);
-
 # Fjern land fra runtime-tabellen, deretter normalisering av data
 UPDATE runtimes
 SET runtime = SUBSTRING_INDEX(runtime, ':', -1)
@@ -213,6 +187,54 @@ GROUP BY t.id);
   SET rating_enum = 'terrible'
   WHERE rating < 2.5;
 
+  #ACTOR_SCORES
+
+	CREATE TABLE actor_scores (
+	   id int(11) unsigned NOT NULL AUTO_INCREMENT,
+	   movie_id int(11) DEFAULT NULL,
+	   score int(11) NOT NULL,
+	   logscore double NOT NULL,
+	   count int(11) NOT NULL,
+	   PRIMARY KEY (id),
+	   CONSTRAINT actor_scores_movie_id_fk FOREIGN KEY (movie_id) REFERENCES title (id) ON DELETE CASCADE
+	 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8; 
+	 
+	SET @rank=0;
+	INSERT INTO actor_scores(
+	SELECT @rank:=@rank+1 AS rank, t.id AS ID,
+	SUM(top.score) AS score,
+	SUM(top.logscore) AS logscore,
+	COUNT(*) AS count
+	FROM title t
+	JOIN cast_info ci ON t.id = ci.movie_id
+	JOIN name n ON ci.person_id = n.id
+	JOIN top1000actors top ON top.name_id = n.id 
+	WHERE ci.role_id BETWEEN 1 AND 2
+	GROUP BY t.id);
+
+#DIRECTOR_SCORES
+
+	CREATE TABLE director_scores (
+	   id int(11) unsigned NOT NULL AUTO_INCREMENT,
+	   movie_id int(11) DEFAULT NULL,
+	   score int(11) NOT NULL,
+	   logscore double NOT NULL,
+	   PRIMARY KEY (id),
+	   CONSTRAINT director_scores_movie_id_fk FOREIGN KEY (movie_id) REFERENCES title (id) ON DELETE CASCADE
+	 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8; 
+	 
+	SET @rank=0;
+	INSERT INTO director_scores(
+	SELECT @rank:=@rank+1 AS rank, t.id AS ID,
+	AVG(top.score) AS score,
+	AVG(top.logscore) AS logscore
+	FROM title t
+	JOIN cast_info ci ON t.id = ci.movie_id
+	JOIN name n ON ci.person_id = n.id
+	JOIN top200directors top ON top.name_id = n.id 
+	WHERE ci.role_id = 8
+	GROUP BY t.id);
+  
   
   # Average IMDb rating for actors
   
@@ -297,31 +319,12 @@ GROUP BY t.id);
  JOIN director_avg_rating r ON r.id = n.id
  WHERE ci.role_id = 8) AS tmp
  GROUP BY movieID;
- 
-CREATE VIEW model1_avg
-AS (
-SELECT t.id AS ID, t.title AS Title, l.language AS Language,
-GROUP_CONCAT(g.genres SEPARATOR ',') AS Genres, r.runtime AS Runtime,mpaa.mpaa AS MPAA,
-rm.release_month AS ReleaseMonth, top.avg_actor_score AS AvgActorScore,
-top2.avg_director_score AS AvgDirectorScore, v.votes AS Votes, ra.rating AS Rating,
-ra.rating_cat AS IntegerRating, ra.rating_enum AS RatingCategory
-FROM title t
-JOIN language l ON t.id = l.movie_id
-JOIN genres g ON t.id = g.movie_id
-JOIN runtimes r ON t.id = r.movie_id
-JOIN mpaa_ratings mpaa ON t.id = mpaa.movie_id
-JOIN release_month rm ON t.id = rm.movie_id
-LEFT JOIN actor_scores_imdb top ON top.movie_id = t.id 
-LEFT JOIN director_scores_imdb top2 ON top2.movie_id = t.id 
-JOIN votes v ON t.id = v.movie_id
-JOIN rating ra ON t.id = ra.movie_id
-GROUP BY t.id); 
 
  
 #Legge inn google og starmeter i databasen
  
 LOAD DATA LOCAL INFILE 'c:/google_and_starmeter_actor_rankings.csv'
-INTO TABLE actors_startmeter_google
+INTO TABLE actors_starmeter_google
 FIELDS TERMINATED BY ',' 
 ENCLOSED BY ''
 LINES TERMINATED BY '\n'
@@ -339,16 +342,125 @@ SET a.person_id = n.id
   
   UPDATE runtimes
   SET runtime_enum = 'Very Short'
-  WHERE runtime BETWEEN 0 AND 90;
+  WHERE runtime BETWEEN 0 AND 50;
   
   UPDATE runtimes
   SET runtime_enum = 'Short'
-  WHERE runtime BETWEEN 91 AND 105;
+  WHERE runtime BETWEEN 51 AND 90;
   
   UPDATE runtimes
   SET runtime_enum = 'Medium'
-  WHERE runtime BETWEEN 106 AND 120;
+  WHERE runtime BETWEEN 90 AND 120;
   
   UPDATE runtimes
   SET runtime_enum = 'Long'
   WHERE runtime > 120;
+
+# Google-score, normalisert
+  
+SET @maax= (SELECT MAX(log(google_results)) FROM actors_starmeter_google);
+
+UPDATE actors_starmeter_google a 
+SET a.google_score = log(a.google_results)/@maax;
+
+
+# Average actor-rating3 for hver film
+ 
+CREATE TABLE actor_scores_stargoogle (
+   movie_id int(11) unsigned NOT NULL,
+   starmeter double NOT NULL,
+   google double NOT NULL,
+   PRIMARY KEY (movie_id)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+ 
+ 
+ INSERT INTO actor_scores_stargoogle
+ SELECT movieID, SUM(star), SUM(google) 
+ FROM
+ (SELECT DISTINCT t.id AS movieID,  n.id AS actorID,
+ a.starmeter_score AS star,
+ a.google_score AS google
+ FROM title t
+ JOIN cast_info ci ON t.id = ci.movie_id
+ JOIN name n ON ci.person_id = n.id
+ JOIN actors_starmeter_google a ON a.person_id = n.id
+ WHERE ci.role_id BETWEEN 1 AND 2
+ AND ci.nr_order BETWEEN 1 AND 10 ) AS tmp
+ GROUP BY movieID
+
+## VIEWS basert på samme filmer (46454 stk)
+## Kun filmer med verdier for rating og budsjett
+
+CREATE TABLE view_maker AS
+SELECT t.id AS ID, t.title AS Title, l.language AS Language,
+r.runtime AS Runtime, r.runtime_enum AS RuntimeCategory, mpaa.mpaa AS MPAA,
+rm.release_month AS ReleaseMonth, 
+IFNULL(top.score,0) AS TotalActorScore, IFNULL(top2.score,0) AS TotalDirectorScore,
+asi.avg_actor_score AS TotalActorScore2, dsi.avg_director_score AS TotalDirectorScore2,
+IFNULL(star.starmeter,0) AS TotalStarMeterScore, IFNULL(star.google,0) AS TotalGoogleScore,
+v.votes AS Votes, ra.rating AS Rating,ra.rating_cat AS IntegerRating, ra.rating_enum AS RatingCategory,
+bu.usd_budget AS UsdBudget, bu.i_adj_usd_budget AS UsdAdjBudget, gr.usd_gross AS UsdGross,
+gr.i_adj_usd_gross AS UsdAdjGross, AVG(gs.avg_rating) AS GenreRating
+FROM title t
+JOIN rating ra ON t.id = ra.movie_id
+LEFT JOIN language l ON t.id = l.movie_id
+LEFT JOIN genres g ON t.id = g.movie_id
+LEFT JOIN runtimes r ON t.id = r.movie_id
+LEFT JOIN mpaa_ratings mpaa ON t.id = mpaa.movie_id
+LEFT JOIN release_month rm ON t.id = rm.movie_id
+LEFT JOIN actor_scores_imdb asi ON asi.movie_id = t.id 
+LEFT JOIN director_scores_imdb dsi ON dsi.movie_id = t.id 
+LEFT JOIN actor_scores top ON top.movie_id = t.id 
+LEFT JOIN director_scores top2 ON top2.movie_id = t.id 
+LEFT JOIN actor_scores_stargoogle star ON star.movie_id = t.id 
+LEFT JOIN votes v ON t.id = v.movie_id
+JOIN budget bu ON t.id = bu.movie_id
+LEFT JOIN gross gr ON t.id = gr.movie_id
+LEFT JOIN genre_score gs ON g.genres = gs.genre
+GROUP BY t.id;
+
+# View model1
+
+CREATE VIEW model1
+AS (
+SELECT ID, Title, Runtime, MPAA, ReleaseMonth, TotalActorScore,
+TotalDirectorScore, RatingCategory
+FROM view_maker
+);
+
+# View model2
+
+CREATE VIEW model2
+AS (
+SELECT ID, Title, RuntimeCategory, TotalActorScore2,
+TotalDirectorScore2, Language, UsdAdjBudget, GenreRating, RatingCategory
+FROM view_maker
+);
+
+# View model3
+
+CREATE VIEW model3
+AS (
+SELECT ID, Title,
+TotalActorScore2,TotalDirectorScore2, UsdAdjBudget,
+(SELECT CASE
+WHEN UsdAdjGross<=exp(13) THEN 'Low'
+WHEN UsdAdjGross>exp(13) AND UsdAdjGross<=exp(17) THEN 'Medium'
+WHEN UsdAdjGross>exp(17) THEN 'High' END) AS UsdAdjGross
+FROM view_maker
+);
+
+# View model4
+
+CREATE VIEW model4
+AS (
+SELECT ID, Title,
+TotalStarMeterScore, TotalGoogleScore, TotalDirectorScore2, UsdAdjBudget,
+(SELECT CASE
+WHEN UsdAdjGross<=exp(13) THEN 'Low'
+WHEN UsdAdjGross>exp(13) AND UsdAdjGross<=exp(17) THEN 'Medium'
+WHEN UsdAdjGross>exp(17) THEN 'High' END) AS UsdAdjGross
+FROM view_maker
+);
+
+ 
